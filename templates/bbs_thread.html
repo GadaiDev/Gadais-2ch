@@ -3,22 +3,60 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>なレ掲</title>
+
+
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.2.1/jquery.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery-cookie/1.4.1/jquery.cookie.min.js"></script>
+
+    <title>{{ threadtitle }} - OSV-4</title>
 </head>
 <body bgcolor="#dfdfdf">
     <h1 style="color:red">{{ threadtitle }}</h1>
-    <a href="/bbs/{{ bbs }}">■戻る</a>　
-    <a href="/">■なレ掲に戻る</a>
+    <a href="/bbs/{{ bbs }}">■掲示板に戻る</a>　
+    <a href="/">■OSV-4に戻る</a>
+    <a href="/{{ bbs }}/dat/{{ thread }}.dat">■datファイル</a>
     <hr>
-    <!-- messages -->
+    <div id="threads">
+      <!-- messages -->
+    </div>
+   <button onclick="submits()">投稿</button>お名前:<input id="usrname">
 
-    <form action="/post/{{ bbs }}/{{ thread }}/" method="post">
-        <input type="submit" value="投稿">お名前:<input name="username">
-
-      ID:<input name="ids"><br>
-        <textarea name="message" style="width: 401px; height: 160px;"></textarea>
-    </form>
+      ID:<input id="usrid"><br>
+        <textarea id="message" style="width: 401px; height: 160px;"></textarea><br><br>
+    現在の掲示板全体の人数は<span id="ninz"></span>人。
     <hr>
-    GADAI★
+    通報<br>
+    <button onclick="report()">通報</button><input id="report_title" width="100" ><br><textarea id="report_text" rows=10 cols=60></textarea><br><a href="https://osv4.gadaidev.repl.co/reports">通報まとめ</a>
 </body>
 </html>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.0.1/socket.io.js" integrity="sha512-q/dWJ3kcmjBLU4Qc47E4A9kTB4m3wuTY7vkFJDTZKjTs8jhyGQnaUrxa0Ytd0ssMZhbNua9hE+E7Qv1j+DyZwA==" crossorigin="anonymous"></script>
+
+<script>
+  var sckio = io()
+  document.getElementById("report_title").value="{{ bbs }}/{{ thread }}にて"
+  function submits(){
+    var namep = document.getElementById("usrname").value
+    var idp = document.getElementById("usrid").value
+    var msgp = document.getElementById("message").value
+    var bbs = "{{ bbs }}"
+    var threads = "{{ thread }}"
+    sckio.emit("post",{"name":namep,"id":idp,"msg":msgp,"bbs":bbs,"threads":threads})
+    var msgp = document.getElementById("message").value = ""
+
+  }
+  
+  function report(){
+    var namep = document.getElementById("report_title").value
+    var msgp = document.getElementById("report_text").value
+    sckio.emit("rep",{"title":namep,"description":msgp})
+  }
+  sckio.on('get-{{ bbs }}-{{ thread }}', function(msg) {
+    var msgs = document.getElementById("threads")
+    msgs.innerHTML = msg
+  });
+  sckio.on('update_counter', function(dta){
+    console.log(dta.count);
+    document.getElementById("ninz").innerHTML = dta.count
+  });
+  
+</script>
