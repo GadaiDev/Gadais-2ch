@@ -9,9 +9,7 @@ from threading import Thread
 import time
 from flask_socketio import SocketIO
 import re
-# テキストからURLを検出する正規表現パターン
-url_pattern = r'http[s]?://(?:[a-zA-Z]|[0-9]|[$-_@.&+]|[!*\\(\\),]|(?:%[0-9a-fA-F][0-9a-fA-F]))+'
-counter = 3
+counter = 0
 
 
 def deletethreads(bbs, threads):
