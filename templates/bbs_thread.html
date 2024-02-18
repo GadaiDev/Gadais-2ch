@@ -7,56 +7,117 @@
 
     <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.2.1/jquery.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery-cookie/1.4.1/jquery.cookie.min.js"></script>
-
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-9ndCyUaIbzAi2FUVXJi0CjmCapSmO7SnpJef0486qhLnuZ2cdeRhO02iuK6FUUVM" crossorigin="anonymous">
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js" integrity="sha384-geWF76RCwLtnZ8qwWowPQNguL3RmwHVBC9FhGdlKrxdiJJigb/j/68SIy3Te4Bkz" crossorigin="anonymous"></script>
     <title>{{ threadtitle }} - OSV-4</title>
 </head>
-<body bgcolor="#dfdfdf">
+<body style='background-color:#dfdfdf;font-family: "Meiryo", sans-serif;font-size:12px'>
     <h1 style="color:red">{{ threadtitle }}</h1>
     <a href="/bbs/{{ bbs }}">■掲示板に戻る</a>　
-    <a href="/">■OSV-4に戻る</a>
-    <a href="/{{ bbs }}/dat/{{ thread }}.dat">■datファイル</a>
+    <a href="/">■Gadais2ちゃんねるに戻る</a><!-- All_Button -->
+    　<a href="/{{ bbs }}/dat/{{ thread }}.dat">■datファイル</a>
     <hr>
-    <div id="threads">
-      <!-- messages -->
-    </div>
-   <button onclick="submits()">投稿</button>お名前:<input id="usrname">
+    <div id="threads" style="margin:1px">
+<!-- message -->
+    </div><hr>
+    <a href="/bbs/{{ bbs }}">■掲示板に戻る</a>　
+    <a href="/">■Gadais2ちゃんねるに戻る</a>
+    <!-- All_Button -->
+    　<a href="/{{ bbs }}/dat/{{ thread }}.dat">■datファイル</a><hr>
+   <button onclick="submits()">投稿</button>お名前:<input id="usrname">コマンド:<input id="mail"><br>
+        <textarea id="message" style="width: 401px; height: 160px;"></textarea><br>
+<button onclick="submits()" style="font-size:13pt;border-radius:2px;padding:20px;width:40%">🖊 投稿する</button><br>
+    現在の掲示板全体の人数は<span id="ninz"></span>人。<br>
+    レス着音<input type="checkbox" id="audioon">/
+    <button data-bs-toggle="offcanvas" data-bs-target="#UpdatesHistoryWindow">アプデ履歴</button>
 
-      ID:<input id="usrid"><br>
-        <textarea id="message" style="width: 401px; height: 160px;"></textarea><br><br>
-    現在の掲示板全体の人数は<span id="ninz"></span>人。
-    <hr>
-    通報<br>
-    <button onclick="report()">通報</button><input id="report_title" width="100" ><br><textarea id="report_text" rows=10 cols=60></textarea><br><a href="https://osv4.gadaidev.repl.co/reports">通報まとめ</a>
+
+    <div class="toast-container position-fixed bottom-0 end-0 p-3">
+      <div id="liveToast" class="toast" role="alert" aria-live="assertive" aria-atomic="true">
+        <div class="toast-header">
+          <i class="bi bi-bell-fill"></i>
+          <strong class="me-auto">アプデ通知</strong>
+          <small>たかひろ</small>
+          <button type="button" class="btn-close" data-bs-dismiss="toast" aria-label="Close"></button>
+        </div>
+        <div class="toast-body">
+          <span id="updateinfos"></span><br><button onclick='location.reload()'>リロードする</button>
+        </div>
+      </div>
+    </div>
+    <div class="offcanvas offcanvas-start" tabindex="-1" id="UpdatesHistoryWindow" aria-labelledby="UpdatesHistoryWindowLabel">
+      <div class="offcanvas-header">
+        <h5 class="offcanvas-title" id="UpdatesHistoryWindowLabel">アプデ履歴</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="offcanvas" aria-label="Close"></button>
+      </div>
+      <div class="offcanvas-body">
+        <p id="updatehistory"></p>
+        <button onclick='location.reload()'>リロードする</button>
+      </div>
+    </div>
+
 </body>
 </html>
+
+<audio src="https://soundeffect-lab.info/sound/button/mp3/decision47.mp3" id="resaudio">
+
 <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.0.1/socket.io.js" integrity="sha512-q/dWJ3kcmjBLU4Qc47E4A9kTB4m3wuTY7vkFJDTZKjTs8jhyGQnaUrxa0Ytd0ssMZhbNua9hE+E7Qv1j+DyZwA==" crossorigin="anonymous"></script>
 
 <script>
+  document.getElementById("audioon").checked = true
   var sckio = io()
-  document.getElementById("report_title").value="{{ bbs }}/{{ thread }}にて"
-  function submits(){
-    var namep = document.getElementById("usrname").value
-    var idp = document.getElementById("usrid").value
-    var msgp = document.getElementById("message").value
-    var bbs = "{{ bbs }}"
-    var threads = "{{ thread }}"
-    sckio.emit("post",{"name":namep,"id":idp,"msg":msgp,"bbs":bbs,"threads":threads})
-    var msgp = document.getElementById("message").value = ""
+  function submits() {
+    // クライアントのIPアドレスを取得する非同期処理
+    // この非同期処理が完了する前に、後続のコードが実行される可能性があることに注意してください
+    $.get("https://ipinfo.io", function(res) {
+        var idp = res.ip;
+        var namep = document.getElementById("usrname").value;
+        var mail = document.getElementById("mail").value;
+        var msgp = document.getElementById("message").value;
+        var audiores = document.getElementById("resaudio");
+        var bbs = "{{ bbs }}";
+        var threads = "{{ thread }}";
 
+        // Socket.ioを使用して投稿情報をサーバーに送信
+        sckio.emit("post", {
+            "name": namep,
+            "id": idp,
+            "msg": msgp,
+            "bbs": bbs,
+            "threads": threads,
+            "mail":mail
+        });
+
+        // 投稿後、メッセージ入力欄をクリア
+        document.getElementById("message").value = "";
+    }, "jsonp");
   }
-  
-  function report(){
-    var namep = document.getElementById("report_title").value
-    var msgp = document.getElementById("report_text").value
-    sckio.emit("rep",{"title":namep,"description":msgp})
+
+
+  function addanker(c){
+     document.getElementById("message").value += ">>"+c+"\n"
   }
+
+
+
   sckio.on('get-{{ bbs }}-{{ thread }}', function(msg) {
     var msgs = document.getElementById("threads")
     msgs.innerHTML = msg
+    if(document.getElementById("audioon").checked){
+        document.getElementById("resaudio").play()
+    }
   });
+
   sckio.on('update_counter', function(dta){
     console.log(dta.count);
     document.getElementById("ninz").innerHTML = dta.count
   });
-  
+  sckio.on("update_information",function(text){
+    toastLiveExample = document.getElementById("liveToast")
+    toastBootstrap = bootstrap.Toast.getOrCreateInstance(toastLiveExample)
+
+    document.getElementById("updateinfos").innerText=text    
+    document.getElementById("updatehistory").innerText+=text+"\n"
+    toastBootstrap.show()
+  })
 </script>
